@@ -1,0 +1,4 @@
+import { Topbar } from "@/components/topbar";
+export default function SettingsPage(){
+  return <><Topbar title="Settings" subtitle="Reporting and system preferences"/><div className="content"><div className="page-intro"><div><h1>Settings</h1><p>Control reporting defaults and reminders.</p></div></div><section className="panel settings-card"><div className="field"><label>Internal weekly report recipient</label><input defaultValue="management@insel.example"/></div><div className="field"><label>Default reporting day</label><select defaultValue="Friday"><option>Friday</option><option>Thursday</option></select></div><div className="field"><label>Default reporting time</label><input type="time" defaultValue="16:00"/></div><p>Automatic Friday sending can be added after manual reports are tested.</p></section></div></>
+}
