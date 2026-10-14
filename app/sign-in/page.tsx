@@ -19,13 +19,33 @@ export default function SignInPage() {
     const password = String(data.get("password"));
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("approved,is_active,rejected_at,role")
+      .eq("id", signInData.user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
+      setError("Your account profile could not be verified. Please contact InselTrack support.");
+      setLoading(false);
+      return;
+    }
+
+    const destination = profile.rejected_at
+      ? "/account-rejected"
+      : !profile.is_active
+        ? "/account-disabled"
+        : profile.approved
+          ? (profile.role === "guest" ? "/clients" : "/dashboard")
+          : "/pending-approval";
+    router.replace(destination);
     router.refresh();
   }
 

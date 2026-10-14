@@ -18,17 +18,27 @@ export function ProjectForm({ clients }: { clients: {id:string;name:string}[] })
     const payload = {
       name:String(data.get("name")),
       client_id:String(data.get("client_id")),
-      requested_by:String(data.get("requested_by") || ""),
-      assigned_to:String(data.get("assigned_to") || ""),
       deadline:String(data.get("deadline") || "") || null,
       status:String(data.get("status")),
-      priority:String(data.get("priority")),
-      description:String(data.get("description") || "")
+      latest_update:null,
+      next_step:null
     };
 
-    const { error } = await supabase.from("projects").insert(payload);
+    const { data: project, error } = await supabase.from("projects").insert(payload).select("id").single();
     if (error) {
       setError(error.message);
+      setSaving(false);
+      return;
+    }
+    const { error: detailsError } = await supabase.from("project_internal_details").insert({
+      project_id:project.id,
+      requested_by:String(data.get("requested_by") || ""),
+      assigned_to:String(data.get("assigned_to") || ""),
+      priority:String(data.get("priority")),
+      internal_notes:String(data.get("description") || "")
+    });
+    if (detailsError) {
+      setError(`Project created, but internal details could not be saved: ${detailsError.message}`);
       setSaving(false);
       return;
     }
@@ -45,7 +55,7 @@ export function ProjectForm({ clients }: { clients: {id:string;name:string}[] })
       <div className="field"><label>Deadline</label><input name="deadline" type="date" /></div>
       <div className="field"><label>Status</label><select name="status"><option value="not_started">Not Started</option><option value="in_progress">In Progress</option><option value="awaiting_feedback">Awaiting Feedback</option><option value="completed">Completed</option><option value="on_hold">On Hold</option></select></div>
       <div className="field"><label>Priority</label><select name="priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
-      <div className="field"><label>Description</label><textarea name="description" rows={5} /></div>
+      <div className="field"><label>Internal notes</label><textarea name="description" rows={5} /></div>
       {error && <p style={{color:"#B84343"}}>{error}</p>}
       <button className="btn lime" disabled={saving}>{saving?"Saving...":"Create project"}</button>
     </form>

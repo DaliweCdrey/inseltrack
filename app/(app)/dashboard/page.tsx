@@ -56,8 +56,8 @@ export default async function DashboardPage() {
             </section>
 
             <section className="panel">
-              <div className="panel-head"><div><h3>Reporting</h3><p>Preview client and internal weekly reports.</p></div></div>
-              <div style={{padding:"0 22px 22px"}}>
+              <div className="reporting-card-content">
+                <div><h3>Reporting</h3><p>Preview client and internal weekly reports.</p></div>
                 <Link className="btn lime" href="/reports">Open reports</Link>
               </div>
             </section>

@@ -1,13 +1,19 @@
 import { Topbar } from "@/components/topbar";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { getCurrentProfile } from "@/lib/auth/profile";
+import { ClientReportingSettings } from "@/components/client-reporting-settings";
 
 export default async function ClientDetailPage({ params }: { params: Promise<{id:string}> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const auth = await getCurrentProfile();
+  if (!auth?.profile.approved || !auth.profile.is_active || auth.profile.rejected_at) notFound();
   const { data: client } = await supabase.from("clients").select("*").eq("id", id).single();
   if (!client) notFound();
-  const { data: recipients } = await supabase.from("client_recipients").select("*").eq("client_id", id).order("name");
+  const { data: recipients } = auth.profile.role === "guest"
+    ? { data: [] }
+    : await supabase.from("client_recipients").select("*").eq("client_id", id).order("name");
   const { data: projects } = await supabase.from("projects").select("*").eq("client_id", id).order("created_at",{ascending:false});
 
   return (
@@ -17,9 +23,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{id
         <div className="page-intro"><div><h1>{client.name}</h1><p>{client.industry ?? "Client"} reporting and projects.</p></div></div>
         <div className="reports-grid">
           <section className="panel settings-card">
-            <h3>Recipients</h3>
-            {(recipients ?? []).map((r:any)=><p key={r.id}>{r.name} · {r.email}</p>)}
-            <p><strong>Reporting:</strong> {client.reporting_enabled ? "On" : "Manual"}</p>
+            <ClientReportingSettings
+              clientId={client.id}
+              reportingEnabled={client.reporting_enabled}
+              reportingDay={client.reporting_day}
+              reportingTime={client.reporting_time}
+              recipients={(recipients ?? []).map((recipient:any) => ({ id: recipient.id, name: recipient.name, email: recipient.email, is_active: recipient.is_active }))}
+              canManage={auth.profile.role === "admin"}
+              isGuest={auth.profile.role === "guest"}
+            />
             <a className="btn lime" href={`/reports?client=${client.id}`}>Preview report</a>
           </section>
           <section className="panel table-wrap">

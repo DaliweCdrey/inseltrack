@@ -13,7 +13,7 @@ const label: Record<string,string> = {
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{status?:string}> }) {
   const params = await searchParams;
   const supabase = await createClient();
-  let query = supabase.from("projects").select("*, clients(name)").order("created_at", { ascending:false });
+  let query = supabase.from("projects").select("*, clients(name), project_internal_details(priority,assigned_to)").order("created_at", { ascending:false });
 
   if (params.status) query = query.eq("status", params.status);
 
@@ -35,9 +35,9 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
             <tbody>
               {(projects ?? []).map((p:any)=>(
                 <tr key={p.id}>
-                  <td><Link href={`/projects/${p.id}`}><span className="project-name">{p.name}</span><span className="sub">{p.priority}</span></Link></td>
+                  <td><Link href={`/projects/${p.id}`}><span className="project-name">{p.name}</span><span className="sub">{p.project_internal_details?.priority ?? ""}</span></Link></td>
                   <td>{p.clients?.name ?? "No client"}</td>
-                  <td>{p.assigned_to ?? "Unassigned"}</td>
+                  <td>{p.project_internal_details?.assigned_to ?? "Unassigned"}</td>
                   <td>{p.deadline ?? "No deadline"}</td>
                   <td><span className={`badge ${p.status==="completed"?"b-complete":p.status==="awaiting_feedback"?"b-feedback":"b-progress"}`}>{label[p.status] ?? p.status}</span></td>
                 </tr>
